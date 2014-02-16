@@ -33,24 +33,27 @@ Class CtlColors {
    ; Error message in case of errors
    Static ErrorMsg := ""
    ; Class initialization
-   Static ClassInit := CtlColors.InitClass()
+   Static InitClass := CtlColors.ClassInit()
    ; ===================================================================================================================
-   ; CtlColors_Base  Base class.
+   ; Constructor / Destructor
    ; ===================================================================================================================
-   Class CtlColors_Base {
-      __New() { 
-         Return False ; this class is a auxiliary object, you must not instantiate it.
-      }
-      ; ----------------------------------------------------------------------------------------------------------------
-      __Delete() {
-         This.Free() ; free GDI resources
+   __New() { ; You must not instantiate this class!
+      If (Exception("", -2).What <> "CtlColors.ClassInit") { ; external call
+         This["!Access_Denied!"] := True
+         Return False
       }
    }
+   ; ----------------------------------------------------------------------------------------------------------------
+   __Delete() {
+      If This["!Access_Denied!"]
+         Return
+      This.Free() ; free GDI resources
+   }
    ; ===================================================================================================================
-   ; InitClass       Sets the base.
+   ; ClassInit       Internal creation of a new instance to ensure that __Delete() will be called.
    ; ===================================================================================================================
-   InitClass() {
-      This.Base := This.CtlColors_Base
+   ClassInit() {
+      CtlColors := New CtlColors
       Return "DONE"
    }
    ; ===================================================================================================================
