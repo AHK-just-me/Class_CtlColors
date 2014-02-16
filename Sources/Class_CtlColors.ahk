@@ -7,7 +7,8 @@
 ; Namespace:         CtlColors
 ; AHK version:       1.1.14.03
 ; Tested on:         Win 7 (x64)
-; Change log:        1.0.00.00/2014-02-14/just me  -  initial release.
+; Change log:        1.0.01.00/2014-02-15/just me  -  changed class initialization.
+;                    1.0.00.00/2014-02-14/just me  -  initial release.
 ; ======================================================================================================================
 ; This software is provided 'as-is', without any express or implied warranty.
 ; In no event will the authors be held liable for any damages arising from the use of this software.
