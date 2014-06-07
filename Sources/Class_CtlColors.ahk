@@ -7,7 +7,8 @@
 ; Namespace:         CtlColors
 ; AHK version:       1.1.14.03
 ; Tested on:         Win 7 (x64)
-; Change log:        1.0.01.00/2014-02-15/just me  -  changed class initialization.
+; Change log:        1.0.02.00/2014-06-07/just me  -  fixed __New() to run properly with compiled scripts.
+;                    1.0.01.00/2014-02-15/just me  -  changed class initialization.
 ;                    1.0.00.00/2014-02-14/just me  -  initial release.
 ; ======================================================================================================================
 ; This software is provided 'as-is', without any express or implied warranty.
@@ -39,7 +40,7 @@ Class CtlColors {
    ; Constructor / Destructor
    ; ===================================================================================================================
    __New() { ; You must not instantiate this class!
-      If (Exception("", -2).What <> "CtlColors.ClassInit") { ; external call
+      If (This.InitClass == "!DONE!") { ; external call after class initialization
          This["!Access_Denied!"] := True
          Return False
       }
@@ -55,7 +56,7 @@ Class CtlColors {
    ; ===================================================================================================================
    ClassInit() {
       CtlColors := New CtlColors
-      Return "DONE"
+      Return "!DONE!"
    }
    ; ===================================================================================================================
    ; CheckBkColor    Internal check for parameter BkColor.
