@@ -5,9 +5,10 @@
 ;                    Supported controls are: Checkbox, ComboBox, DropDownList, Edit, ListBox, Radio, Text.
 ;                    Checkboxes and Radios accept only background colors due to design.
 ; Namespace:         CtlColors
-; AHK version:       1.1.14.03
-; Tested on:         Win 7 (x64)
-; Change log:        1.0.02.00/2014-06-07/just me  -  fixed __New() to run properly with compiled scripts.
+; Tested with:       1.1.22.02
+; Tested on:         Win 8.1 (x64)
+; Change log:        1.0.03.00/2015-07-06/just me  -  fixed Change() to run properly for ComboBoxes.
+;                    1.0.02.00/2014-06-07/just me  -  fixed __New() to run properly with compiled scripts.
 ;                    1.0.01.00/2014-02-15/just me  -  changed class initialization.
 ;                    1.0.00.00/2014-02-14/just me  -  initial release.
 ; ======================================================================================================================
@@ -202,10 +203,13 @@ Class CtlColors {
             This.Attached[HWND].Brush := 0
          }
          Brush := DllCall("Gdi32.dll\CreateSolidBrush", "UInt", BkColor, "UPtr")
-         This.Attached[HWND].Brush := Brush
-         This.Attached[HWND].BkColor := BkColor
+         For I, V In CTL.Hwnds {
+            This.Attached[V].Brush := Brush
+            This.Attached[V].BkColor := BkColor
+         }
       }
-      This.Attached[HWND].TxColor := TxColor
+      For I, V In Ctl.Hwnds
+         This.Attached[V].TxColor := TxColor
       This.ErrorMsg := ""
       DllCall("User32.dll\InvalidateRect", "Ptr", HWND, "Ptr", 0, "Int", 1)
       Return True
