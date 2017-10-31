@@ -5,9 +5,10 @@
 ;                    Supported controls are: Checkbox, ComboBox, DropDownList, Edit, ListBox, Radio, Text.
 ;                    Checkboxes and Radios accept only background colors due to design.
 ; Namespace:         CtlColors
-; Tested with:       1.1.22.02
-; Tested on:         Win 8.1 (x64)
-; Change log:        1.0.03.00/2015-07-06/just me  -  fixed Change() to run properly for ComboBoxes.
+; Tested with:       1.1.25.02
+; Tested on:         Win 10 (x64)
+; Change log:        1.0.04.00/2017-10-30/just me  -  added transparent background (BkColor = "Trans").
+;                    1.0.03.00/2015-07-06/just me  -  fixed Change() to run properly for ComboBoxes.
 ;                    1.0.02.00/2014-06-07/just me  -  fixed __New() to run properly with compiled scripts.
 ;                    1.0.01.00/2014-02-15/just me  -  changed class initialization.
 ;                    1.0.00.00/2014-02-14/just me  -  initial release.
@@ -31,6 +32,8 @@ Class CtlColors {
    Static HTML := {AQUA: 0xFFFF00, BLACK: 0x000000, BLUE: 0xFF0000, FUCHSIA: 0xFF00FF, GRAY: 0x808080, GREEN: 0x008000
                  , LIME: 0x00FF00, MAROON: 0x000080, NAVY: 0x800000, OLIVE: 0x008080, PURPLE: 0x800080, RED: 0x0000FF
                  , SILVER: 0xC0C0C0, TEAL: 0x808000, WHITE: 0xFFFFFF, YELLOW: 0x00FFFF}
+   ; Transparent Brush
+   Static NullBrush := DllCall("GetStockObject", "Int", 5, "UPtr")
    ; System Colors
    Static SYSCOLORS := {Edit: "", ListBox: "", Static: ""}
    ; Error message in case of errors
@@ -153,8 +156,9 @@ Class CtlColors {
       If !IsObject(Classes)
          Classes := [CtrlClass]
       ; Check background color -----------------------------------------------------------------------------------------
-      If !This.CheckBkColor(BkColor, Classes[1])
-         Return False
+      If (BkColor <> "Trans")
+         If !This.CheckBkColor(BkColor, Classes[1])
+            Return False
       ; Check text color -----------------------------------------------------------------------------------------------
       If !This.CheckTxColor(TxColor)
          Return False
@@ -165,7 +169,10 @@ Class CtlColors {
          This.HandledMessages[V] += 1
       }
       ; Store values for HWND ------------------------------------------------------------------------------------------
-      Brush := DllCall("Gdi32.dll\CreateSolidBrush", "UInt", BkColor, "UPtr")
+      If (BkColor = "Trans")
+         Brush := This.NullBrush
+      Else
+         Brush := DllCall("Gdi32.dll\CreateSolidBrush", "UInt", BkColor, "UPtr")
       For I, V In Hwnds
          This.Attached[V] := {Brush: Brush, TxColor: TxColor, BkColor: BkColor, Classes: Classes, Hwnds: Hwnds}
       ; Redraw control -------------------------------------------------------------------------------------------------
@@ -191,18 +198,23 @@ Class CtlColors {
          Return This.Attach(HWND, BkColor, TxColor)
       CTL := This.Attached[HWND]
       ; Check BkColor --------------------------------------------------------------------------------------------------
-      If !This.CheckBkColor(BkColor, CTL.Classes[1])
-         Return False
+      If (BkColor <> "Trans")
+         If !This.CheckBkColor(BkColor, CTL.Classes[1])
+            Return False
       ; Check TxColor ------------------------------------------------------------------------------------------------
       If !This.CheckTxColor(TxColor)
          Return False
       ; Store Colors ---------------------------------------------------------------------------------------------------
       If (BkColor <> CTL.BkColor) {
          If (CTL.Brush) {
-            DllCall("Gdi32.dll\DeleteObject", "Prt", CTL.Brush)
+            If (Ctl.Brush <> This.NullBrush)
+               DllCall("Gdi32.dll\DeleteObject", "Prt", CTL.Brush)
             This.Attached[HWND].Brush := 0
          }
-         Brush := DllCall("Gdi32.dll\CreateSolidBrush", "UInt", BkColor, "UPtr")
+         If (BkColor = "Trans")
+            Brush := This.NullBrush
+         Else
+            Brush := DllCall("Gdi32.dll\CreateSolidBrush", "UInt", BkColor, "UPtr")
          For I, V In CTL.Hwnds {
             This.Attached[V].Brush := Brush
             This.Attached[V].BkColor := BkColor
@@ -225,7 +237,7 @@ Class CtlColors {
       HWND += 0
       If This.Attached.HasKey(HWND) {
          CTL := This.Attached[HWND].Clone()
-         If (CTL.Brush)
+         If (CTL.Brush) && (CTL.Brush <> This.NullBrush)
             DllCall("Gdi32.dll\DeleteObject", "Prt", CTL.Brush)
          For I, V In CTL.Classes {
             If This.HandledMessages[V] > 0 {
@@ -248,7 +260,8 @@ Class CtlColors {
    ; ===================================================================================================================
    Free() {
       For K, V In This.Attached
-         DllCall("Gdi32.dll\DeleteObject", "Ptr", V.Brush)
+         If (V.Brush) && (V.Brush <> This.NullBrush)
+            DllCall("Gdi32.dll\DeleteObject", "Ptr", V.Brush)
       For K, V In This.HandledMessages
          If (V > 0) {
             OnMessage(This.WM_CTLCOLOR[K], "")
@@ -277,7 +290,10 @@ CtlColors_OnMessage(HDC, HWND) {
       CTL := CtlColors.Attached[HWND]
       If (CTL.TxColor != "")
          DllCall("Gdi32.dll\SetTextColor", "Ptr", HDC, "UInt", CTL.TxColor)
-      DllCall("Gdi32.dll\SetBkColor", "Ptr", HDC, "UInt", CTL.BkColor)
+      If (CTL.BkColor = "Trans")
+         DllCall("Gdi32.dll\SetBkMode", "Ptr", HDC, "UInt", 1) ; TRANSPARENT = 1
+      Else
+         DllCall("Gdi32.dll\SetBkColor", "Ptr", HDC, "UInt", CTL.BkColor)
       Return CTL.Brush
    }
 }
